@@ -1,3 +1,4 @@
+import io
 import pandas as pd
 import streamlit as st
 
@@ -43,8 +44,9 @@ if st.button("Розрахувати бюджет"):
         status = "Дефіцитний бюджет ⚠️"
 
     st.header("2. Результати")
+
     st.subheader("Таблиця витрат")
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
 
     st.subheader("Підсумки")
     st.write(f"**Загальні витрати:** {total_expenses:.2f} грн")
@@ -55,13 +57,21 @@ if st.button("Розрахувати бюджет"):
     chart_data = df.set_index("Категорія")
     st.bar_chart(chart_data)
 
-    save_csv = st.checkbox("Зберегти результати у CSV")
+    st.subheader("Збереження результатів")
 
-    if save_csv:
-        result_df = df.copy()
-        result_df.loc[len(result_df)] = ["ДОХІД", income]
-        result_df.loc[len(result_df)] = ["ЗАГАЛЬНІ ВИТРАТИ", total_expenses]
-        result_df.loc[len(result_df)] = ["ЗАЛИШОК", balance]
+    result_df = df.copy()
+    result_df.loc[len(result_df)] = ["ДОХІД", income]
+    result_df.loc[len(result_df)] = ["ЗАГАЛЬНІ ВИТРАТИ", total_expenses]
+    result_df.loc[len(result_df)] = ["ЗАЛИШОК", balance]
+    result_df.loc[len(result_df)] = ["СТАТУС", status]
 
-        result_df.to_csv("monthly_budget_results.csv", index=False, encoding="utf-8-sig")
-        st.success("Результати збережено у файл monthly_budget_results.csv")
+    csv_buffer = io.StringIO()
+    result_df.to_csv(csv_buffer, index=False)
+    csv_data = csv_buffer.getvalue().encode("utf-8-sig")
+
+    st.download_button(
+        label="📥 Завантажити результати у CSV",
+        data=csv_data,
+        file_name="monthly_budget_results.csv",
+        mime="text/csv",
+    )
